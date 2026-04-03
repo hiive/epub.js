@@ -6,7 +6,11 @@ import { EVENTS } from "../../utils/constants";
 import { Pane, Highlight, Underline } from "marks-pane";
 
 class IframeView {
+	static ViewMap = new Map();
 	constructor(section, options) {
+		const oldView = IframeView.ViewMap.get(section.href);
+		if (oldView) oldView.destroy();
+		IframeView.ViewMap.set(section.href, this);
 		this.settings = extend({
 			ignoreClass : "",
 			axis: undefined, //options.layout && options.layout.props.flow === "scrolled" ? "vertical" : "horizontal",

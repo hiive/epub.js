@@ -463,9 +463,9 @@ class DefaultViewManager {
 
 		if(this.isPaginated && this.settings.axis === "horizontal" && (!dir || dir === "ltr")) {
 
-			this.scrollLeft = this.container.scrollLeft;
+			this.scrollLeft = Math.floor(this.container.scrollLeft);
 
-			left = this.container.scrollLeft + this.container.offsetWidth + this.layout.delta;
+			left = Math.floor(this.container.scrollLeft) + this.container.offsetWidth + this.layout.delta;
 
 			if(left <= this.container.scrollWidth) {
 				this.scrollBy(this.layout.delta, 0, true);
@@ -498,9 +498,9 @@ class DefaultViewManager {
 
 			this.scrollTop = this.container.scrollTop;
 
-			let top  = this.container.scrollTop + this.container.offsetHeight;
+			const reachedToBottom = Math.abs(this.container.scrollHeight - this.container.clientHeight - this.container.scrollTop) < 1;
 
-			if(top < this.container.scrollHeight) {
+			if(!reachedToBottom) {
 				this.scrollBy(0, this.layout.height, true);
 			} else {
 				next = this.views.last().section.next();
@@ -552,9 +552,9 @@ class DefaultViewManager {
 
 		if(this.isPaginated && this.settings.axis === "horizontal" && (!dir || dir === "ltr")) {
 
-			this.scrollLeft = this.container.scrollLeft;
+			this.scrollLeft = Math.floor(this.container.scrollLeft);
 
-			left = this.container.scrollLeft;
+			left = Math.floor(this.container.scrollLeft);
 
 			if(left > 0) {
 				this.scrollBy(-this.layout.delta, 0, true);

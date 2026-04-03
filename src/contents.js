@@ -655,7 +655,12 @@ class Contents {
 							console.error(e, e.stack);
 						}
 					} else {
+						// range.toString() might be empty, causing getBoundingClientRect()
+						// to return all zeros. Use the parent element as fallback.
 						position = range.getBoundingClientRect();
+						if (position.left === 0 && position.top === 0 && position.width === 0) {
+							position = range.startContainer.parentElement.getBoundingClientRect();
+						}
 					}
 				}
 			}
@@ -666,14 +671,7 @@ class Contents {
 			let id = target.substring(target.indexOf("#")+1);
 			let el = this.document.getElementById(id);
 			if(el) {
-				if (isWebkit) {
-					// Webkit reports incorrect bounding rects in Columns
-					let newRange = new Range();
-					newRange.selectNode(el);
-					position = newRange.getBoundingClientRect();
-				} else {
-					position = el.getBoundingClientRect();
-				}
+				position = el.getBoundingClientRect();
 			}
 		}
 

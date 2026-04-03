@@ -5352,6 +5352,9 @@ var Contents = class {
             }
           } else {
             position = range.getBoundingClientRect();
+            if (position.left === 0 && position.top === 0 && position.width === 0) {
+              position = range.startContainer.parentElement.getBoundingClientRect();
+            }
           }
         }
       }
@@ -5359,13 +5362,7 @@ var Contents = class {
       let id = target.substring(target.indexOf("#") + 1);
       let el = this.document.getElementById(id);
       if (el) {
-        if (isWebkit) {
-          let newRange = new Range();
-          newRange.selectNode(el);
-          position = newRange.getBoundingClientRect();
-        } else {
-          position = el.getBoundingClientRect();
-        }
+        position = el.getBoundingClientRect();
       }
     }
     if (position) {
@@ -6074,8 +6071,12 @@ var annotations_default = Annotations;
 // src/managers/views/iframe.js
 import EventEmitter5 from "event-emitter";
 import { Pane, Highlight, Underline } from "marks-pane";
-var IframeView = class {
+var IframeView = class _IframeView {
+  static ViewMap = /* @__PURE__ */ new Map();
   constructor(section, options) {
+    const oldView = _IframeView.ViewMap.get(section.href);
+    if (oldView) oldView.destroy();
+    _IframeView.ViewMap.set(section.href, this);
     this.settings = extend({
       ignoreClass: "",
       axis: void 0,
@@ -7055,9 +7056,7 @@ var Views = class {
     this.length--;
   }
   destroy(view) {
-    if (view.displayed) {
-      view.destroy();
-    }
+    view.destroy();
     if (this.container) {
       this.container.removeChild(view.element);
     }
@@ -7420,8 +7419,8 @@ var DefaultViewManager = class {
     let dir = this.settings.direction;
     if (!this.views.length) return;
     if (this.isPaginated && this.settings.axis === "horizontal" && (!dir || dir === "ltr")) {
-      this.scrollLeft = this.container.scrollLeft;
-      left = this.container.scrollLeft + this.container.offsetWidth + this.layout.delta;
+      this.scrollLeft = Math.floor(this.container.scrollLeft);
+      left = Math.floor(this.container.scrollLeft) + this.container.offsetWidth + this.layout.delta;
       if (left <= this.container.scrollWidth) {
         this.scrollBy(this.layout.delta, 0, true);
       } else {
@@ -7446,8 +7445,8 @@ var DefaultViewManager = class {
       }
     } else if (this.isPaginated && this.settings.axis === "vertical") {
       this.scrollTop = this.container.scrollTop;
-      let top = this.container.scrollTop + this.container.offsetHeight;
-      if (top < this.container.scrollHeight) {
+      const reachedToBottom = Math.abs(this.container.scrollHeight - this.container.clientHeight - this.container.scrollTop) < 1;
+      if (!reachedToBottom) {
         this.scrollBy(0, this.layout.height, true);
       } else {
         next = this.views.last().section.next();
@@ -7480,8 +7479,8 @@ var DefaultViewManager = class {
     let dir = this.settings.direction;
     if (!this.views.length) return;
     if (this.isPaginated && this.settings.axis === "horizontal" && (!dir || dir === "ltr")) {
-      this.scrollLeft = this.container.scrollLeft;
-      left = this.container.scrollLeft;
+      this.scrollLeft = Math.floor(this.container.scrollLeft);
+      left = Math.floor(this.container.scrollLeft);
       if (left > 0) {
         this.scrollBy(-this.layout.delta, 0, true);
       } else {
