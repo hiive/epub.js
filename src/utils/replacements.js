@@ -128,6 +128,14 @@ export function replaceLinks(contents, fn) {
 export function substitute(content, urls, replacements) {
 	urls.forEach(function(url, i){
 		if (url && replacements[i]) {
+			// When manifest href is URI-encoded but the content source is not,
+			// try replacing the decoded form first
+			try {
+				let decoded = decodeURIComponent(url);
+				content = content.replace(new RegExp(decoded.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "g"), replacements[i]);
+			} catch (e) {
+				// decodeURIComponent can throw on malformed URIs — ignore
+			}
 			// Account for special characters in the file name.
 			// See https://stackoverflow.com/a/6318729.
 			url = url.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");

@@ -1635,6 +1635,11 @@ function replaceLinks(contents, fn) {
 function substitute(content, urls, replacements) {
   urls.forEach(function(url, i) {
     if (url && replacements[i]) {
+      try {
+        let decoded = decodeURIComponent(url);
+        content = content.replace(new RegExp(decoded.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "g"), replacements[i]);
+      } catch (e) {
+      }
       url = url.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
       content = content.replace(new RegExp(url, "g"), replacements[i]);
     }
@@ -2521,13 +2526,14 @@ var Locations = class {
       var len = node.length;
       var dist;
       var pos = 0;
-      if (node.textContent.trim().length === 0) {
-        return false;
-      }
-      if (counter == 0) {
+      if (counter === 0 && range === void 0) {
         range = this.createRange();
         range.startContainer = node;
         range.startOffset = 0;
+      }
+      if (node.textContent.trim().length === 0) {
+        prev = node;
+        return false;
       }
       dist = _break - counter;
       if (dist > len) {
@@ -2954,13 +2960,14 @@ var Packaging = class {
     var selected = qsa(manifestXml, "item");
     var items = Array.prototype.slice.call(selected);
     items.forEach(function(item) {
-      var id = item.getAttribute("id"), href = item.getAttribute("href") || "", type2 = item.getAttribute("media-type") || "", overlay = item.getAttribute("media-overlay") || "", properties = item.getAttribute("properties") || "";
+      var id = item.getAttribute("id"), href = item.getAttribute("href") || "", type2 = item.getAttribute("media-type") || "", overlay = item.getAttribute("media-overlay") || "", properties = item.getAttribute("properties") || "", fallback = item.getAttribute("fallback") || "";
       manifest[id] = {
         "href": href,
         // "url" : href,
         "type": type2,
         "overlay": overlay,
-        "properties": properties.length ? properties.split(" ") : []
+        "properties": properties.length ? properties.split(" ") : [],
+        "fallback": fallback
       };
     });
     return manifest;
@@ -3211,7 +3218,8 @@ var Navigation = class {
       return this.toc;
     }
     if (target.indexOf("#") === 0) {
-      index = this.tocById[target.substring(1)];
+      target = target.substring(1);
+      index = this.tocById[target];
     } else if (target in this.tocByHref) {
       index = this.tocByHref[target];
     }
@@ -3836,6 +3844,7 @@ var PageList = class {
   constructor(xml) {
     this.pages = [];
     this.locations = [];
+    this.hrefMap = {};
     this.epubcfi = new epubcfi_default();
     this.firstPage = 0;
     this.lastPage = 0;
@@ -3908,7 +3917,7 @@ var PageList = class {
     var pageText = navLabelText.textContent;
     var content = qs(item, "content");
     var href = content.getAttribute("src");
-    var page = parseInt(pageText, 10);
+    var page = pageText;
     return {
       "href": href,
       "page": page
@@ -3921,7 +3930,7 @@ var PageList = class {
    * @return {object} pageListItem
    */
   item(item) {
-    var content = qs(item, "a"), href = content.getAttribute("href") || "", text = content.textContent || "", page = parseInt(text), isCfi = href.indexOf("epubcfi"), split, packageUrl, cfi;
+    var content = qs(item, "a"), href = content.getAttribute("href") || "", text = content.textContent || "", page = text, isCfi = href.indexOf("epubcfi"), split, packageUrl, cfi;
     if (isCfi != -1) {
       split = href.split("#");
       packageUrl = split[0];
@@ -3947,18 +3956,19 @@ var PageList = class {
   process(pageList) {
     pageList.forEach(function(item) {
       this.pages.push(item.page);
+      this.hrefMap[item.page] = item.href;
       if (item.cfi) {
         this.locations.push(item.cfi);
       }
     }, this);
-    this.firstPage = parseInt(this.pages[0]);
-    this.lastPage = parseInt(this.pages[this.pages.length - 1]);
+    this.firstPage = this.pages[0];
+    this.lastPage = this.pages[this.pages.length - 1];
     this.totalPages = this.lastPage - this.firstPage;
   }
   /**
    * Get a PageList result from a EpubCFI
    * @param  {string} cfi EpubCFI String
-   * @return {number} page
+   * @return {string} page
    */
   pageFromCfi(cfi) {
     var pg = -1;
@@ -3980,19 +3990,24 @@ var PageList = class {
   }
   /**
    * Get an EpubCFI from a Page List Item
-   * @param  {string | number} pg
+   * @param  {string} pg
    * @return {string} cfi
    */
   cfiFromPage(pg) {
     var cfi = -1;
-    if (typeof pg != "number") {
-      pg = parseInt(pg);
-    }
     var index = this.pages.indexOf(pg);
     if (index != -1) {
       cfi = this.locations[index];
     }
     return cfi;
+  }
+  /**
+   * Get the href for a page
+   * @param  {string} pg
+   * @return {string} href
+   */
+  hrefFromPage(pg) {
+    return this.hrefMap[pg];
   }
   /**
    * Get a Page from Book percentage
