@@ -92,12 +92,30 @@ class Spine {
 					return;
 				}.bind(this);
 			} else {
+				// Non-linear items (e.g., cover): navigate to the nearest
+				// linear section so the user isn't stuck.
 				item.prev = function() {
+					let prevIndex = item.index;
+					while (prevIndex > 0) {
+						let prev = this.get(prevIndex-1);
+						if (prev && prev.linear) {
+							return prev;
+						}
+						prevIndex -= 1;
+					}
 					return;
-				}
+				}.bind(this);
 				item.next = function() {
+					let nextIndex = item.index;
+					while (nextIndex < this.spineItems.length-1) {
+						let next = this.get(nextIndex+1);
+						if (next && next.linear) {
+							return next;
+						}
+						nextIndex += 1;
+					}
 					return;
-				}
+				}.bind(this);
 			}
 
 
