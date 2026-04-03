@@ -2063,7 +2063,7 @@ var Spine = class {
           let prevIndex = item.index;
           while (prevIndex > 0) {
             let prev = this.get(prevIndex - 1);
-            if (prev && prev.linear) {
+            if (prev) {
               return prev;
             }
             prevIndex -= 1;
@@ -9180,21 +9180,32 @@ var Rendition = class {
       });
     }
     let computed = contents.window.getComputedStyle(contents.content, null);
-    let height = (contents.content.offsetHeight - (parseFloat(computed.paddingTop) + parseFloat(computed.paddingBottom))) * 0.95;
+    let contentHeight = contents.content.offsetHeight - (parseFloat(computed.paddingTop) + parseFloat(computed.paddingBottom));
     let horizontalPadding = parseFloat(computed.paddingLeft) + parseFloat(computed.paddingRight);
+    let maxWidth = this._layout.columnWidth ? this._layout.columnWidth - horizontalPadding + "px" : "100%";
+    let maxHeight = Math.floor(contentHeight * 0.95) + "px";
+    let fullHeight = Math.floor(contentHeight) + "px";
     contents.addStylesheetRules({
       "img": {
-        "max-width": (this._layout.columnWidth ? this._layout.columnWidth - horizontalPadding + "px" : "100%") + "!important",
-        "max-height": height + "px!important",
+        "max-width": maxWidth + "!important",
+        "max-height": maxHeight + "!important",
         "object-fit": "contain",
         "page-break-inside": "avoid",
         "break-inside": "avoid",
         "box-sizing": "border-box"
       },
       "svg": {
-        "max-width": (this._layout.columnWidth ? this._layout.columnWidth - horizontalPadding + "px" : "100%") + "!important",
-        "max-height": height + "px!important",
+        "max-width": maxWidth + "!important",
+        "max-height": maxHeight + "!important",
         "page-break-inside": "avoid",
+        "break-inside": "avoid"
+      },
+      "figure": {
+        "max-height": fullHeight + "!important",
+        "break-inside": "avoid",
+        "overflow": "hidden"
+      },
+      "table, blockquote, pre, details": {
         "break-inside": "avoid"
       }
     });

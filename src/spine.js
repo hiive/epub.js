@@ -73,7 +73,7 @@ class Spine {
 					let prevIndex = item.index;
 					while (prevIndex > 0) {
 						let prev = this.get(prevIndex-1);
-						if (prev && prev.linear) {
+						if (prev) {
 							return prev;
 						}
 						prevIndex -= 1;
