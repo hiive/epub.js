@@ -7268,7 +7268,7 @@ var DefaultViewManager = class {
     this.emit(EVENTS.MANAGERS.RESIZED, {
       width: this._stageSize.width,
       height: this._stageSize.height
-    }, epubcfi);
+    }, epubcfi || this.target);
   }
   createView(section, forceRight) {
     return new this.View(section, extend(this.viewSettings, { forceRight }));
@@ -7291,6 +7291,7 @@ var DefaultViewManager = class {
     if (target === section.href || isNumber(target)) {
       target = void 0;
     }
+    this.target = target;
     var visible = this.views.find(section);
     if (visible && section && this.layout.name !== "pre-paginated") {
       let offset = visible.offset();
@@ -7745,6 +7746,7 @@ var DefaultViewManager = class {
     }
     this.scrollTop = scrollTop;
     this.scrollLeft = scrollLeft;
+    this.target = void 0;
     if (!this.ignore) {
       this.emit(EVENTS.MANAGERS.SCROLL, {
         top: scrollTop,
@@ -8849,8 +8851,10 @@ var Rendition = class {
       width: size.width,
       height: size.height
     }, epubcfi);
-    if (this.location && this.location.start) {
-      this.display(epubcfi || this.location.start.cfi);
+    if (epubcfi) {
+      this.display(epubcfi);
+    } else if (this.location && this.location.start) {
+      this.display(this.location.start.cfi);
     }
   }
   /**
