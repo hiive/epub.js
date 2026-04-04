@@ -1,4 +1,4 @@
-import EventEmitter from "event-emitter";
+import EventEmitter from "./utils/event-emitter";
 import { extend, defer, isFloat } from "./utils/core";
 import Hook from "./utils/hook";
 import EpubCFI from "./epubcfi";

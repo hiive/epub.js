@@ -1,4 +1,4 @@
-import EventEmitter from "event-emitter";
+import EventEmitter from "./utils/event-emitter";
 import {extend, defer} from "./utils/core";
 import Url from "./utils/url";
 import Path from "./utils/path";

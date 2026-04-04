@@ -4,8 +4,39 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
-// src/book.js
-import EventEmitter10 from "event-emitter";
+// src/utils/event-emitter.js
+import { EventEmitter as NodeEventEmitter } from "events";
+function eventEmitterMixin(proto) {
+  const ee = NodeEventEmitter.prototype;
+  proto.on = function(event, listener) {
+    if (!this.__ee__) this.__ee__ = new NodeEventEmitter();
+    this.__ee__.on(event, listener);
+    return this;
+  };
+  proto.off = function(event, listener) {
+    if (!this.__ee__) return this;
+    this.__ee__.off(event, listener);
+    return this;
+  };
+  proto.once = function(event, listener) {
+    if (!this.__ee__) this.__ee__ = new NodeEventEmitter();
+    this.__ee__.once(event, listener);
+    return this;
+  };
+  proto.emit = function(event, ...args) {
+    if (!this.__ee__) return;
+    this.__ee__.emit(event, ...args);
+  };
+  proto.allOff = function(event) {
+    if (!this.__ee__) return;
+    if (event) {
+      this.__ee__.removeAllListeners(event);
+    } else {
+      this.__ee__.removeAllListeners();
+    }
+  };
+  return proto;
+}
 
 // src/utils/core.js
 var core_exports = {};
@@ -2455,7 +2486,6 @@ var EVENTS = {
 };
 
 // src/locations.js
-import EventEmitter from "event-emitter";
 var Locations = class {
   constructor(spine, request2, pause) {
     this.spine = spine;
@@ -2830,7 +2860,7 @@ var Locations = class {
     clearTimeout(this.processingTimeout);
   }
 };
-EventEmitter(Locations.prototype);
+eventEmitterMixin(Locations.prototype);
 var locations_default = Locations;
 
 // src/container.js
@@ -4051,11 +4081,7 @@ var PageList = class {
 };
 var pagelist_default = PageList;
 
-// src/rendition.js
-import EventEmitter8 from "event-emitter";
-
 // src/layout.js
-import EventEmitter2 from "event-emitter";
 var Layout = class {
   constructor(settings) {
     this.settings = settings;
@@ -4239,7 +4265,7 @@ var Layout = class {
     }
   }
 };
-EventEmitter2(Layout.prototype);
+eventEmitterMixin(Layout.prototype);
 var layout_default = Layout;
 
 // src/themes.js
@@ -4473,9 +4499,6 @@ var Themes = class {
   }
 };
 var themes_default = Themes;
-
-// src/contents.js
-import EventEmitter3 from "event-emitter";
 
 // src/mapping.js
 var Mapping = class {
@@ -5825,11 +5848,10 @@ var Contents = class {
     this.removeListeners();
   }
 };
-EventEmitter3(Contents.prototype);
+eventEmitterMixin(Contents.prototype);
 var contents_default = Contents;
 
 // src/annotations.js
-import EventEmitter4 from "event-emitter";
 var Annotations = class {
   constructor(rendition) {
     this.rendition = rendition;
@@ -6065,11 +6087,10 @@ var Annotation = class {
   text() {
   }
 };
-EventEmitter4(Annotation.prototype);
+eventEmitterMixin(Annotation.prototype);
 var annotations_default = Annotations;
 
 // src/managers/views/iframe.js
-import EventEmitter5 from "event-emitter";
 import { Pane, Highlight, Underline } from "marks-pane";
 var IframeView = class _IframeView {
   static ViewMap = /* @__PURE__ */ new Map();
@@ -6671,11 +6692,8 @@ var IframeView = class _IframeView {
     }
   }
 };
-EventEmitter5(IframeView.prototype);
+eventEmitterMixin(IframeView.prototype);
 var iframe_default = IframeView;
-
-// src/managers/default/index.js
-import EventEmitter6 from "event-emitter";
 
 // src/utils/scrolltype.js
 function scrollType() {
@@ -7866,11 +7884,10 @@ var DefaultViewManager = class {
     return this.rendered;
   }
 };
-EventEmitter6(DefaultViewManager.prototype);
+eventEmitterMixin(DefaultViewManager.prototype);
 var default_default = DefaultViewManager;
 
 // src/managers/helpers/snap.js
-import EventEmitter7 from "event-emitter";
 var PI_D2 = Math.PI / 2;
 var EASING_EQUATIONS = {
   easeOutSine: function(pos) {
@@ -8121,7 +8138,7 @@ var Snap = class {
     this.scroller = void 0;
   }
 };
-EventEmitter7(Snap.prototype);
+eventEmitterMixin(Snap.prototype);
 var snap_default = Snap;
 
 // src/managers/continuous/index.js
@@ -9306,7 +9323,7 @@ var Rendition = class {
     doc.getElementsByTagName("head")[0].appendChild(meta);
   }
 };
-EventEmitter8(Rendition.prototype);
+eventEmitterMixin(Rendition.prototype);
 var rendition_default = Rendition;
 
 // src/archive.js
@@ -9512,7 +9529,6 @@ var Archive = class {
 var archive_default = Archive;
 
 // src/store.js
-import EventEmitter9 from "event-emitter";
 import localforage from "localforage";
 var Store = class {
   constructor(name, requester, resolver) {
@@ -9806,7 +9822,7 @@ var Store = class {
     this.removeListeners();
   }
 };
-EventEmitter9(Store.prototype);
+eventEmitterMixin(Store.prototype);
 var store_default = Store;
 
 // src/displayoptions.js
@@ -10379,7 +10395,7 @@ var Book = class {
     this.archived = false;
   }
 };
-EventEmitter10(Book.prototype);
+eventEmitterMixin(Book.prototype);
 var book_default = Book;
 
 // src/epub.js

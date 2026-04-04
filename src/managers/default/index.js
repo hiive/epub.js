@@ -1,4 +1,4 @@
-import EventEmitter from "event-emitter";
+import EventEmitter from "../../utils/event-emitter";
 import {extend, defer, windowBounds, isNumber} from "../../utils/core";
 import scrollType from "../../utils/scrolltype";
 import Mapping from "../../mapping";

@@ -1,6 +1,6 @@
 import { extend } from "./utils/core";
 import { EVENTS } from "./utils/constants";
-import EventEmitter from "event-emitter";
+import EventEmitter from "./utils/event-emitter";
 
 /**
  * Figures out the CSS values to apply for a layout

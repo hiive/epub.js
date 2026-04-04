@@ -1,4 +1,4 @@
-import EventEmitter from "event-emitter";
+import EventEmitter from "../../utils/event-emitter";
 import {extend, borders, uuid, isNumber, bounds, defer, createBlobUrl, revokeBlobUrl} from "../../utils/core";
 import EpubCFI from "../../epubcfi";
 import Contents from "../../contents";

@@ -1,4 +1,4 @@
-import EventEmitter from "event-emitter";
+import EventEmitter from "./utils/event-emitter";
 import {isNumber, prefixed, borders, defaults} from "./utils/core";
 import EpubCFI from "./epubcfi";
 import Mapping from "./mapping";

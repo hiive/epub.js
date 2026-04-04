@@ -2,7 +2,7 @@ import {qs, sprint, locationOf, defer} from "./utils/core";
 import Queue from "./utils/queue";
 import EpubCFI from "./epubcfi";
 import { EVENTS } from "./utils/constants";
-import EventEmitter from "event-emitter";
+import EventEmitter from "./utils/event-emitter";
 
 /**
  * Find Locations for a Book
