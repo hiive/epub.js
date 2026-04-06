@@ -5,6 +5,8 @@ import Hook from "./utils/hook";
 export default class Spine {
   constructor();
 
+  length: number;
+
   hooks: {
     serialize: Hook,
     content: Hook
