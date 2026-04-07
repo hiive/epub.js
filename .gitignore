@@ -8,4 +8,4 @@ books
 lib
 dist
 documentation/html
-types/*.js
+types/*.jsdist/

@@ -982,6 +982,7 @@ class Rendition {
 			"figure" : {
 				"max-height": fullHeight + "!important",
 				"break-inside": "avoid",
+				"box-sizing": "border-box",
 				"overflow": "hidden"
 			},
 			"table, blockquote, pre, details" : {

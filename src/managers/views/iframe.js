@@ -191,15 +191,17 @@ class IframeView {
 				// Listen for events that require an expansion of the iframe
 				this.addListeners();
 
-				return new Promise((resolve, reject) => {
-					// Expand the iframe to the full size of the content
-					this.expand();
+				// Expand the iframe to the full size of the content
+				this.expand();
 
-					if (this.settings.forceRight) {
-						this.element.style.marginLeft = this.width() + "px";
-					}
-					resolve();
-				});
+				if (this.settings.forceRight) {
+					this.element.style.marginLeft = this.width() + "px";
+				}
+
+				// Size figure images so the entire figure (border, padding,
+				// image, caption) fits within the column height without
+				// clipping. Must wait for figure images to load first.
+				return this.sizeFigureImages();
 
 			}.bind(this), function(e){
 				this.emit(EVENTS.VIEWS.LOAD_ERROR, e);
@@ -501,6 +503,133 @@ class IframeView {
 	setWritingMode(mode) {
 		// this.element.style.writingMode = writingMode;
 		this.writingMode = mode;
+	}
+
+	/**
+	 * Size images inside <figure> elements so the entire figure fits
+	 * within the column height. Waits for figure images to load, then
+	 * computes the largest image dimensions that preserve aspect ratio
+	 * while leaving room for caption, border, and padding.
+	 */
+	sizeFigureImages() {
+		console.log("[sizeFigureImages] called");
+		if (!this.contents || this.layout.name === "pre-paginated") {
+			return Promise.resolve();
+		}
+
+		var doc = this.contents.document;
+		var win = this.contents.window;
+		var content = this.contents.content;
+		var computed = win.getComputedStyle(content);
+		var contentHeight = content.offsetHeight - parseFloat(computed.paddingTop) - parseFloat(computed.paddingBottom);
+		var horizontalPadding = parseFloat(computed.paddingLeft) + parseFloat(computed.paddingRight);
+		var maxW = this.layout.columnWidth ? (this.layout.columnWidth - horizontalPadding) : content.offsetWidth;
+
+		var figures = doc.querySelectorAll("figure");
+		if (!figures.length) return Promise.resolve();
+
+		// Wait for all figure images to load
+		var figImages = [];
+		figures.forEach(function(fig) {
+			var img = fig.querySelector("img");
+			if (img && !img.complete) figImages.push(img);
+		});
+
+		var doSizing = function() {
+			console.log("[sizeFigureImages] doSizing: contentHeight=" + contentHeight + ", maxW=" + maxW + ", figures=" + figures.length);
+			figures.forEach(function(figure) {
+				var img = figure.querySelector("img");
+				if (!img || !img.naturalWidth || !img.naturalHeight) return;
+
+				var figStyle = win.getComputedStyle(figure);
+				var borderV = parseFloat(figStyle.borderTopWidth) + parseFloat(figStyle.borderBottomWidth);
+				var borderH = parseFloat(figStyle.borderLeftWidth) + parseFloat(figStyle.borderRightWidth);
+				var paddingV = parseFloat(figStyle.paddingTop) + parseFloat(figStyle.paddingBottom);
+				var paddingH = parseFloat(figStyle.paddingLeft) + parseFloat(figStyle.paddingRight);
+
+				var availW = maxW - borderH - paddingH;
+				var aspect = img.naturalWidth / img.naturalHeight;
+
+				// Iterate: sizing the image changes the caption's available
+				// width, which may cause it to reflow taller. Converges in
+				// 1-2 passes.
+				for (var pass = 0; pass < 3; pass++) {
+					var captionH = 0;
+					for (var ci = 0; ci < figure.children.length; ci++) {
+						if (figure.children[ci] !== img) {
+							captionH += figure.children[ci].offsetHeight || 0;
+						}
+					}
+
+					var availH = contentHeight - borderV - paddingV - captionH;
+					if (availW <= 0 || availH <= 0) break;
+
+					var w = availW;
+					var h = w / aspect;
+					if (h > availH) {
+						h = availH;
+						w = h * aspect;
+					}
+
+					figure.style.setProperty("max-height", contentHeight + "px", "important");
+					img.style.setProperty("width", Math.floor(w) + "px", "important");
+					img.style.setProperty("height", Math.floor(h) + "px", "important");
+					img.style.setProperty("max-width", Math.floor(w) + "px", "important");
+					img.style.setProperty("max-height", Math.floor(h) + "px", "important");
+
+					// Force layout reflow then re-measure to check fit
+					void figure.offsetHeight;
+
+					// Re-measure caption after reflow (it may have changed)
+					var newCaptionH = 0;
+					for (var ri = 0; ri < figure.children.length; ri++) {
+						if (figure.children[ri] !== img) {
+							newCaptionH += figure.children[ri].offsetHeight || 0;
+						}
+					}
+					var totalH = Math.floor(h) + newCaptionH + borderV + paddingV;
+					if (totalH <= contentHeight) break;
+				}
+
+				// Final safety: if the figure's actual rendered height still
+				// exceeds contentHeight (e.g., due to post-layout caption
+				// reflow), shrink the image by the overflow amount.
+				void figure.offsetHeight;
+				var overflow = figure.scrollHeight - contentHeight;
+				if (overflow > 0) {
+					var finalH = Math.max(10, Math.floor(h) - overflow);
+					var finalW = Math.floor(finalH * (img.naturalWidth / img.naturalHeight));
+					img.style.setProperty("width", finalW + "px", "important");
+					img.style.setProperty("height", finalH + "px", "important");
+					img.style.setProperty("max-width", finalW + "px", "important");
+					img.style.setProperty("max-height", finalH + "px", "important");
+				}
+			});
+		};
+
+		if (figImages.length === 0) {
+			doSizing();
+			return Promise.resolve();
+		}
+
+		return new Promise(function(resolve) {
+			var remaining = figImages.length;
+			function onDone() {
+				remaining--;
+				if (remaining <= 0) {
+					doSizing();
+					resolve();
+				}
+			}
+			figImages.forEach(function(img) {
+				img.addEventListener("load", onDone);
+				img.addEventListener("error", onDone);
+			});
+			setTimeout(function() {
+				doSizing();
+				resolve();
+			}, 3000);
+		});
 	}
 
 	addListeners() {
